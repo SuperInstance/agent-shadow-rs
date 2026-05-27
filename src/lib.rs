@@ -14,10 +14,22 @@ pub struct Action {
 
 impl Action {
     pub fn new(ts: f64, action_type: &str) -> Self {
-        Self { timestamp: ts, action_type: action_type.to_string(), payload: vec![], duration: 0.0, success: true }
+        Self {
+            timestamp: ts,
+            action_type: action_type.to_string(),
+            payload: vec![],
+            duration: 0.0,
+            success: true,
+        }
     }
-    pub fn with_duration(mut self, d: f64) -> Self { self.duration = d; self }
-    pub fn with_success(mut self, s: bool) -> Self { self.success = s; self }
+    pub fn with_duration(mut self, d: f64) -> Self {
+        self.duration = d;
+        self
+    }
+    pub fn with_success(mut self, s: bool) -> Self {
+        self.success = s;
+        self
+    }
 }
 
 /// A trace of an agent's behavior over time.
@@ -31,35 +43,55 @@ pub struct Trace {
 
 impl Trace {
     pub fn new(agent_id: &str) -> Self {
-        Self { agent_id: agent_id.to_string(), actions: vec![], start_time: 0.0, end_time: 0.0 }
+        Self {
+            agent_id: agent_id.to_string(),
+            actions: vec![],
+            start_time: 0.0,
+            end_time: 0.0,
+        }
     }
 
     pub fn record(&mut self, action: Action) {
-        if self.actions.is_empty() { self.start_time = action.timestamp; }
+        if self.actions.is_empty() {
+            self.start_time = action.timestamp;
+        }
         self.end_time = action.timestamp;
         self.actions.push(action);
     }
 
-    pub fn duration(&self) -> f64 { self.end_time - self.start_time }
-    pub fn action_count(&self) -> usize { self.actions.len() }
+    pub fn duration(&self) -> f64 {
+        self.end_time - self.start_time
+    }
+    pub fn action_count(&self) -> usize {
+        self.actions.len()
+    }
 
     pub fn success_rate(&self) -> f64 {
-        if self.actions.is_empty() { return 0.0; }
+        if self.actions.is_empty() {
+            return 0.0;
+        }
         self.actions.iter().filter(|a| a.success).count() as f64 / self.actions.len() as f64
     }
 
     pub fn action_types(&self) -> HashMap<String, usize> {
         let mut counts = HashMap::new();
-        for a in &self.actions { *counts.entry(a.action_type.clone()).or_insert(0) += 1; }
+        for a in &self.actions {
+            *counts.entry(a.action_type.clone()).or_insert(0) += 1;
+        }
         counts
     }
 
     pub fn filter_by_type(&self, action_type: &str) -> Vec<&Action> {
-        self.actions.iter().filter(|a| a.action_type == action_type).collect()
+        self.actions
+            .iter()
+            .filter(|a| a.action_type == action_type)
+            .collect()
     }
 
     pub fn avg_duration(&self) -> f64 {
-        if self.actions.is_empty() { return 0.0; }
+        if self.actions.is_empty() {
+            return 0.0;
+        }
         self.actions.iter().map(|a| a.duration).sum::<f64>() / self.actions.len() as f64
     }
 }
@@ -72,25 +104,45 @@ pub struct Shadow {
 }
 
 impl Default for Shadow {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Shadow {
-    pub fn new() -> Self { Self { traces: HashMap::new(), max_traces: 100 } }
-    pub fn with_max_traces(mut self, n: usize) -> Self { self.max_traces = n; self }
+    pub fn new() -> Self {
+        Self {
+            traces: HashMap::new(),
+            max_traces: 100,
+        }
+    }
+    pub fn with_max_traces(mut self, n: usize) -> Self {
+        self.max_traces = n;
+        self
+    }
 
     pub fn record(&mut self, agent_id: &str, action: Action) {
-        let trace = self.traces.entry(agent_id.to_string()).or_insert_with(|| Trace::new(agent_id));
+        let trace = self
+            .traces
+            .entry(agent_id.to_string())
+            .or_insert_with(|| Trace::new(agent_id));
         trace.record(action);
         if self.traces.len() > self.max_traces {
             // Remove oldest trace
-            if let Some(oldest) = self.traces.iter().min_by(|a, b| a.1.start_time.partial_cmp(&b.1.start_time).unwrap()).map(|(k, _)| k.clone()) {
+            if let Some(oldest) = self
+                .traces
+                .iter()
+                .min_by(|a, b| a.1.start_time.partial_cmp(&b.1.start_time).unwrap())
+                .map(|(k, _)| k.clone())
+            {
                 self.traces.remove(&oldest);
             }
         }
     }
 
-    pub fn get_trace(&self, agent_id: &str) -> Option<&Trace> { self.traces.get(agent_id) }
+    pub fn get_trace(&self, agent_id: &str) -> Option<&Trace> {
+        self.traces.get(agent_id)
+    }
 
     pub fn compare(&self, agent_a: &str, agent_b: &str) -> Option<ComparisonResult> {
         let a = self.traces.get(agent_a)?;
@@ -156,9 +208,18 @@ mod tests {
     #[test]
     fn test_compare() {
         let mut shadow = Shadow::new();
-        shadow.record("a", Action::new(0.0, "x").with_success(true).with_duration(1.0));
-        shadow.record("a", Action::new(1.0, "y").with_success(false).with_duration(2.0));
-        shadow.record("b", Action::new(0.0, "x").with_success(true).with_duration(0.5));
+        shadow.record(
+            "a",
+            Action::new(0.0, "x").with_success(true).with_duration(1.0),
+        );
+        shadow.record(
+            "a",
+            Action::new(1.0, "y").with_success(false).with_duration(2.0),
+        );
+        shadow.record(
+            "b",
+            Action::new(0.0, "x").with_success(true).with_duration(0.5),
+        );
         let cmp = shadow.compare("a", "b").unwrap();
         assert_eq!(cmp.action_diff, 1);
     }
