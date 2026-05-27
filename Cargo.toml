@@ -1,0 +1,8 @@
+[package]
+name = "agent-shadow"
+version = "0.1.0"
+edition = "2021"
+description = "Agent shadowing — monitor, replay, and analyze agent behavior"
+license = "MIT"
+
+[dependencies]
