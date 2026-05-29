@@ -34,3 +34,5 @@ println!("Success rate diff: {:.3}", cmp.success_diff);
 ## License
 
 MIT
+
+Part of the [SuperInstance OpenConstruct](https://github.com/SuperInstance/OpenConstruct) ecosystem.
